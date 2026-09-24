@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#090b10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<title>Minha Tabela de Pontos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080a0f;--card:#11151d;--card2:#0d1016;--line:#252c38;--txt:#f5f7fb;--muted:#929baa;--purple:#7c5cff;--green:#35d58b;--red:#ff5e73;--blue:#4da3ff;--yellow:#ffd166}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#1b1530,#080a0f 38%);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}.wrap{max-width:1050px;margin:auto;padding:14px}.top,.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.top{margin-bottom:14px}.brand h1{margin:0;font-size:23px}.brand p{margin:4px 0;color:var(--muted);font-size:12px}.pill{background:#191e28;border:1px solid var(--line);border-radius:999px;padding:8px 11px;color:var(--muted);font-size:12px}.card{background:linear-gradient(145deg,#171b24,#0e1117);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 14px 40px #0005}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.big{font-size:45px;font-weight:800}.big span{font-size:18px;color:var(--muted)}.progress{height:9px;background:#272d38;border-radius:20px;overflow:hidden;margin:10px 0}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--purple),#b9adff);border-radius:20px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--card2);border:1px solid var(--line);padding:10px;border-radius:14px}.stat b{font-size:19px;display:block}.stat small,.muted{color:var(--muted)}.datebox{display:flex;gap:7px;margin:12px 0}.datebox input{flex:1;min-width:0}.btn,input{font:inherit}.btn{padding:9px 12px;border-radius:11px;background:#202631;color:var(--txt);border:1px solid var(--line);cursor:pointer}.btn.primary{background:var(--purple);border-color:var(--purple)}.btn.red{background:#341722;color:#ff9baa}.section{margin-top:12px}h2{font-size:17px;margin:0 0 10px}.tabs{display:flex;gap:7px;overflow:auto;padding-bottom:3px}.tab{white-space:nowrap}.tab.active{background:var(--purple);border-color:var(--purple)}.task{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line);padding:12px;border-radius:14px;margin:7px 0}.task input[type=checkbox]{width:20px;height:20px;accent-color:var(--purple)}.task .name{flex:1}.task.done .name{text-decoration:line-through;color:#737d8c}.pts{font-weight:800;color:var(--green);white-space:nowrap}.negative{color:var(--red)!important}.edit{background:none;border:0;color:var(--muted);cursor:pointer}.login{display:none;margin-bottom:12px}.login.show{display:block}.login input,.modal input{width:100%;padding:11px;margin:5px 0;background:#0a0d12;border:1px solid var(--line);border-radius:10px;color:white}.actions{display:flex;gap:7px;flex-wrap:wrap}.chart{margin-top:12px}.chart canvas{width:100%;height:260px;background:#0a0d12;border:1px solid var(--line);border-radius:14px}.modal{display:none;position:fixed;inset:0;background:#000b;align-items:center;justify-content:center;padding:15px;z-index:20}.modal.open{display:flex}.modalbox{width:min(430px,100%);background:#11151d;border:1px solid var(--line);border-radius:18px;padding:17px}.empty{text-align:center;padding:22px;color:var(--muted)}footer{text-align:center;color:#606978;font-size:11px;padding:22px}.dangerInfo{font-size:12px;color:#ff8998;margin-top:8px}@media(max-width:700px){.hero{grid-template-columns:1fr}.top{align-items:flex-start}.big{font-size:40px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><div class="brand"><h1>Minha Tabela de Pontos</h1><p>Complete suas tarefas e chegue aos 1.000 pontos.</p></div><div id="accountPill" class="pill">Não conectado</div></header>
+
+<section id="loginCard" class="card login">
+<h2>☁️ Sincronizar entre dispositivos</h2><p class="muted">Use a mesma conta no outro aparelho.</p>
+<input id="email" type="email" placeholder="Seu e-mail"><input id="password" type="password" placeholder="Senha">
+<div class="actions"><button class="btn primary" id="loginBtn">Entrar</button><button class="btn" id="signupBtn">Criar conta</button></div><div id="authMsg" class="muted" style="font-size:12px;margin-top:7px"></div>
+</section>
+
+<section class="hero">
+<div class="card"><div class="row"><div><div class="muted">Total acumulado</div><div class="big" id="total">0 <span>/ 1.000</span></div></div><div class="pill" id="percent">0%</div></div><div class="progress"><div class="bar" id="bar"></div></div><div class="stats"><div class="stat"><b id="dayPoints">0</b><small>Pontos do dia</small></div><div class="stat"><b id="doneCount">0</b><small>Feitas hoje</small></div><div class="stat"><b id="remaining">1.000</b><small>Faltam</small></div></div></div>
+<div class="card"><h2>📅 Dia selecionado</h2><div class="datebox"><button class="btn" id="prevDay">‹</button><input id="date" type="date"><button class="btn" id="nextDay">›</button></div><div id="dateLabel" class="muted"></div><div class="actions" style="margin-top:10px"><button class="btn primary" id="todayBtn">Hoje</button><button class="btn" id="chartBtn">📈 Gráfico</button></div></div>
+</section>
+
+<section class="card section">
+<div class="row"><h2>📋 Tarefas</h2><button class="btn primary" id="addBtn">+ Adicionar</button></div>
+<div class="tabs" id="tabs"></div>
+<div id="tasks"></div>
+</section>
+
+<section class="card chart" id="chartSection"><div class="row"><h2>📈 Evolução</h2><button class="btn" id="hideChart">Fechar</button></div><p class="muted" style="font-size:12px">Pontos do dia e total acumulado nos últimos 30 dias.</p><canvas id="graph" width="900" height="300"></canvas></section>
+
+<section class="card section"><div class="row"><h2>⚙️ Conta</h2><button class="btn red" id="logoutBtn">Sair</button></div><div id="accountText" class="muted">Entre para sincronizar.</div></section>
+<footer>Minha Tabela de Pontos • meta de 1.000 pontos</footer>
+</div>
+
+<div class="modal" id="modal"><div class="modalbox"><h2 id="modalTitle">Adicionar tarefa</h2><input id="taskName" placeholder="Nome da tarefa"><input id="taskPoints" type="number" step="1" placeholder="Pontos"><div class="actions" style="margin-top:8px"><button class="btn primary" id="saveTask">Salvar</button><button class="btn" id="cancel">Cancelar</button></div></div></div>
+
+<script>
+const SUPABASE_URL="https://dcoyzmfelpqpfcayvssa.supabase.co";
+const SUPABASE_KEY="sb_publishable_N1Gf6dBokkgvgxWznUysXA_TT1IvQzU";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const DEFAULT_TASKS=[
+{id:"d1",name:"Arrumar a cama",points:1,cat:"daily"},
+{id:"d2",name:"Arrumar o quarto",points:1,cat:"daily"},
+{id:"d3",name:"Ajudar com a louça",points:1,cat:"daily"},
+{id:"d4",name:"Estudar / fazer tarefas",points:1,cat:"daily"},
+{id:"d5",name:"Manter a higiene pessoal",points:1,cat:"daily"},
+{id:"d6",name:"Organizar minhas coisas",points:1,cat:"daily"},
+{id:"d7",name:"Guardar o celular no horário combinado",points:1,cat:"daily"},
+{id:"d8",name:"Ajudar em uma tarefa extra da casa",points:1,cat:"daily"},
+{id:"w1",name:"Limpar uma área da casa",points:5,cat:"weekly"},
+{id:"w2",name:"Organizar roupas / guarda-roupa",points:5,cat:"weekly"},
+{id:"w3",name:"Ajudar em uma limpeza maior",points:5,cat:"weekly"},
+{id:"w4",name:"Cumprir todas as tarefas da semana",points:10,cat:"weekly"},
+{id:"m1",name:"Fazer uma organização geral",points:15,cat:"monthly"},
+{id:"m2",name:"Ajudar em uma limpeza mensal",points:15,cat:"monthly"},
+{id:"m3",name:"Cumprir as metas do mês",points:20,cat:"monthly"},
+{id:"b1",name:"Bônus: iniciativa extra",points:5,cat:"bonus"},
+{id:"b2",name:"Bônus: ajudar sem pedir",points:5,cat:"bonus"},
+{id:"b3",name:"Bônus: completar uma tarefa difícil",points:10,cat:"bonus"},
+{id:"x1",name:"Desconto: deixar tarefa sem fazer",points:-2,cat:"discount"},
+{id:"x2",name:"Desconto: não cumprir combinado",points:-3,cat:"discount"},
+{id:"x3",name:"Desconto: bagunça deixada para trás",points:-2,cat:"discount"}
+];
+
+let state=JSON.parse(localStorage.getItem("pontos_state")||"null")||{tasks:DEFAULT_TASKS,marks:{}};
+if(!state.tasks.some(t=>t.cat)) state.tasks=DEFAULT_TASKS;
+let cat="daily",selectedDate=new Date().toISOString().slice(0,10),editId=null,user=null;
+
+const labels={daily:"🟢 Diárias",weekly:"🔵 Semanais",monthly:"🔴 Mensais",bonus:"⭐ Bônus",discount:"⚠️ Descontos"};
+function key(d,id){return d+"__"+id}
+function saveLocal(){localStorage.setItem("pontos_state",JSON.stringify(state))}
+function dayPoints(d){return state.tasks.reduce((s,t)=>s+(state.marks[key(d,t.id)]?Number(t.points):0),0)}
+function totalPoints(){let n=0;for(const k in state.marks)if(state.marks[k]){const id=k.split("__").slice(1).join("__"),t=state.tasks.find(x=>x.id===id);if(t)n+=Number(t.points)}return n}
+async function persist(){saveLocal();if(!user)return;const r=await sb.from("pontos").upsert({user_id:user.id,dados:{tasks:state.tasks,marks:state.marks},atualizado_em:new Date().toISOString()});if(r.error)console.warn(r.error)}
+async function loadCloud(){if(!user)return;const r=await sb.from("pontos").select("dados").eq("user_id",user.id).maybeSingle();if(r.data?.dados){state={tasks:r.data.dados.tasks?.length?r.data.dados.tasks:DEFAULT_TASKS,marks:r.data.dados.marks||{}};saveLocal();render()}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function fmt(d){return new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}
+
+function renderTabs(){const el=document.getElementById("tabs");el.innerHTML="";Object.entries(labels).forEach(([k,v])=>{const b=document.createElement("button");b.className="btn tab"+(cat===k?" active":"");b.textContent=v;b.onclick=()=>{cat=k;render()};el.appendChild(b)})}
+function render(){
+const total=totalPoints(),dp=dayPoints(selectedDate),filtered=state.tasks.filter(t=>t.cat===cat);
+document.getElementById("total").innerHTML=`${total.toLocaleString("pt-BR")} <span>/ 1.000</span>`;
+document.getElementById("percent").textContent=Math.max(0,Math.min(100,total/10)).toFixed(0)+"%";
+document.getElementById("bar").style.width=Math.max(0,Math.min(100,total/10))+"%";
+document.getElementById("dayPoints").textContent=dp;document.getElementById("doneCount").textContent=state.tasks.filter(t=>t.cat==="daily"&&state.marks[key(selectedDate,t.id)]).length;document.getElementById("remaining").textContent=Math.max(0,1000-total);
+document.getElementById("date").value=selectedDate;document.getElementById("dateLabel").textContent=fmt(selectedDate);
+renderTabs();
+const box=document.getElementById("tasks");box.innerHTML="";
+if(!filtered.length)box.innerHTML='<div class="empty">Nenhuma tarefa nesta categoria.</div>';
+filtered.forEach(t=>{const checked=!!state.marks[key(selectedDate,t.id)],div=document.createElement("div");div.className="task"+(checked?" done":"");div.innerHTML=`<input type="checkbox" ${checked?"checked":""}><div class="name">${esc(t.name)}</div><div class="pts ${t.points<0?"negative":""}">${t.points>0?"+":""}${t.points}</div><button class="edit">✏️</button>`;div.querySelector("input").onchange=async e=>{state.marks[key(selectedDate,t.id)]=e.target.checked;await persist();render()};div.querySelector(".edit").onclick=()=>openModal(t);box.appendChild(div)});
+document.getElementById("accountPill").textContent=user?user.email:"Não conectado";document.getElementById("accountText").textContent=user?"Conectado como "+user.email+".":"Entre para sincronizar seus dados.";
+}
+function move(n){let d=new Date(selectedDate+"T12:00:00");d.setDate(d.getDate()+n);selectedDate=d.toISOString().slice(0,10);render()}
+document.getElementById("prevDay").onclick=()=>move(-1);document.getElementById("nextDay").onclick=()=>move(1);document.getElementById("todayBtn").onclick=()=>{selectedDate=new Date().toISOString().slice(0,10);render()};document.getElementById("date").onchange=e=>{selectedDate=e.target.value;render()};
+document.getElementById("chartBtn").onclick=()=>{document.getElementById("chartSection").scrollIntoView({behavior:"smooth"});draw()};document.getElementById("hideChart").onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+
+function openModal(t){editId=t?.id||null;document.getElementById("modalTitle").textContent=t?"Editar tarefa":"Adicionar tarefa";document.getElementById("taskName").value=t?.name||"";document.getElementById("taskPoints").value=t?.points??1;document.getElementById("modal").classList.add("open")}
+document.getElementById("addBtn").onclick=()=>openModal();document.getElementById("cancel").onclick=()=>document.getElementById("modal").classList.remove("open");
+document.getElementById("saveTask").onclick=async()=>{const n=document.getElementById("taskName").value.trim(),p=Number(document.getElementById("taskPoints").value)||0;if(!n)return;if(editId){const t=state.tasks.find(x=>x.id===editId);t.name=n;t.points=p}else state.tasks.push({id:"t"+Date.now(),name:n,points:p,cat});document.getElementById("modal").classList.remove("open");await persist();render()};
+
+async function auth(create){const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value,m=document.getElementById("authMsg");if(!email||password.length<6){m.textContent="Use e-mail e senha com pelo menos 6 caracteres.";return}m.textContent="Aguarde...";const r=create?await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await sb.auth.signInWithPassword({email,password});if(r.error){m.textContent=r.error.message;return}if(create){m.textContent="Conta criada! Confirme o e-mail e depois entre.";return}user=r.data.user;document.getElementById("loginCard").classList.remove("show");await loadCloud();render()}
+document.getElementById("loginBtn").onclick=()=>auth(false);document.getElementById("signupBtn").onclick=()=>auth(true);document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut();user=null;document.getElementById("loginCard").classList.add("show");render()};
+
+function draw(){const c=document.getElementById("graph"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);let days=[],d=new Date(selectedDate+"T12:00:00");for(let i=29;i>=0;i--){let x=new Date(d);x.setDate(x.getDate()-i);days.push(x.toISOString().slice(0,10))}let daily=days.map(dayPoints),sum=0,cum=daily.map(v=>sum+=v),max=Math.max(10,...cum),l=38,r=12,t=15,b=28,cw=w-l-r,ch=h-t-b;ctx.strokeStyle="#252c38";ctx.fillStyle="#7d8796";ctx.font="11px system-ui";for(let i=0;i<=4;i++){let y=t+ch-i*ch/4;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(w-r,y);ctx.stroke();ctx.fillText(Math.round(max*i/4),5,y+4)}function line(a,col){ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();a.forEach((v,i)=>{let x=l+i*cw/(a.length-1),y=t+ch-v/max*ch;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}line(daily,"#9b86ff");line(cum,"#35d58b");ctx.fillStyle="#7d8796";days.forEach((x,i)=>{if(i%5===0)ctx.fillText(x.slice(8)+"/"+x.slice(5,7),l+i*cw/29-10,h-8)})}
+window.addEventListener("resize",draw);
+sb.auth.onAuthStateChange(async(_e,s)=>{user=s?.user||null;document.getElementById("loginCard").classList.toggle("show",!user);render();if(user)await loadCloud()});
+render();draw();if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
