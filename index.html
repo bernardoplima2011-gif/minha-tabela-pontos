@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Minha Tabela de Pontos — tarefas, pontos e progresso até 1.000.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Minha Tabela de Pontos</title>
+<style>
+:root{--bg:#070b15;--panel:#11192a;--card:#182238;--card2:#202c45;--text:#f8fafc;--muted:#9aa8bd;--green:#35d07f;--blue:#4da3ff;--yellow:#ffd34d;--red:#ff6675;--purple:#9b7cff;--border:#2b3955}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(circle at 50% -10%,#243655 0,#0b1020 42%,#070b15 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+button,input{font:inherit}button{cursor:pointer}.app{max-width:1050px;margin:auto;padding:14px 14px 30px}
+header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.brand h1{font-size:clamp(24px,6vw,40px);margin:0;font-weight:950;letter-spacing:-1px}.brand p{margin:4px 0;color:var(--muted)}
+.score{background:linear-gradient(135deg,#1b7b50,#123b2d);border:1px solid #2d9c68;padding:12px 16px;border-radius:18px;text-align:right;min-width:155px}.score strong{display:block;font-size:27px}.score span{font-size:12px;color:#b8f5d5}
+.toolbar{display:flex;gap:7px;flex-wrap:wrap;background:#11192aee;border:1px solid var(--border);padding:9px;border-radius:18px;margin-bottom:12px;backdrop-filter:blur(10px)}.toolbar button,.toolbar input,.toolbar select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;min-height:44px;padding:8px 11px}.toolbar input{color-scheme:dark}.day{font-weight:800;min-width:145px}
+.progress{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:13px;margin-bottom:12px}.progress-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px}.bar{height:14px;background:#090e19;border-radius:99px;overflow:hidden;border:1px solid var(--border)}.fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),#b9ed58);border-radius:99px;transition:width .3s}.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.badge{padding:5px 8px;border-radius:999px;background:#26334d;color:#cbd5e1;font-size:12px}.badge.active{background:#263e32;color:#8ff0b9;border:1px solid #357f58}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:13px;margin-bottom:12px}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.section-title h2{font-size:18px;margin:0}.section-title small{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.task{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:15px;padding:10px;min-height:60px;transition:.15s}.task.done{background:linear-gradient(135deg,#173c2d,#172c2b);border-color:#327955}.task input{width:23px;height:23px;accent-color:var(--green);flex:none}.task-text{flex:1;line-height:1.25}.task.done .task-text{text-decoration:line-through;color:#9bb4a7}.points{font-weight:900;white-space:nowrap}.positive{color:#72e5a5}.negative{color:#ff7e8a}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:14px;margin-bottom:12px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{min-height:44px}.row input,.row select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:11px;padding:8px 10px;min-width:0}.primary{background:#2b9d68!important;border-color:#48c483!important}.danger{background:#4b1f29!important;border-color:#793240!important}.mutedbtn{background:var(--card)!important}.hidden{display:none!important}.small{font-size:13px;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px}.stat b{display:block;font-size:21px}.list{display:grid;gap:8px}.task-editor{display:grid;grid-template-columns:1fr 80px 90px auto;gap:7px;align-items:center}.task-editor input,.task-editor select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px;min-height:42px}.footer{color:var(--muted);font-size:12px;text-align:center;padding:10px}.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:#eafaf1;color:#103521;padding:10px 15px;border-radius:12px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:700px){header{align-items:stretch;flex-direction:column}.score{text-align:left}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.task-editor{grid-template-columns:1fr 75px 80px auto}.app{padding:11px 10px 28px}}
+@media(max-width:420px){.task-editor{grid-template-columns:1fr 1fr}.task-editor input:first-child{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main class="app">
+<header>
+  <div class="brand"><h1>🏆 Minha Tabela de Pontos</h1><p>Pequenas atitudes, grandes conquistas!</p></div>
+  <div class="score"><strong id="total">0</strong><span>pontos acumulados</span></div>
+</header>
+
+<div class="toolbar">
+  <button id="prev">◀</button><input id="date" type="date" aria-label="Escolher data"><button id="next">▶</button>
+  <button id="today">📅 Hoje</button><button id="historyBtn">📊 Histórico</button><button id="editBtn">⚙️ Editar tarefas</button>
+</div>
+
+<div class="progress">
+  <div class="progress-top"><strong id="progressText">0 / 1.000</strong><strong id="percent">0%</strong></div>
+  <div class="bar"><div id="fill" class="fill"></div></div>
+  <div class="badges"><span class="badge" id="b600">🥉 Bronze — 600</span><span class="badge" id="b700">🥈 Prata — 700</span><span class="badge" id="b800">🥇 Ouro — 800</span><span class="badge" id="b900">👑 Bônus — 900</span></div>
+</div>
+
+<section id="mainSections"></section>
+
+<section id="historyPanel" class="panel hidden">
+  <div class="section-title"><h2>📊 Histórico e resumo</h2><button id="closeHistory">Fechar</button></div>
+  <div class="stats">
+    <div class="stat"><span class="small">Dias com pontos</span><b id="daysCount">0</b></div>
+    <div class="stat"><span class="small">Maior dia</span><b id="bestDay">0</b></div>
+    <div class="stat"><span class="small">Média por dia</span><b id="avgDay">0</b></div>
+  </div>
+  <div id="historyList" class="list" style="margin-top:10px"></div>
+</section>
+
+<section id="editPanel" class="panel hidden">
+  <div class="section-title"><h2>⚙️ Editar lista de tarefas</h2><button id="closeEdit">Fechar</button></div>
+  <p class="small">Você pode mudar o nome e os pontos, criar novas tarefas ou excluir tarefas. As marcações antigas continuam salvas.</p>
+  <div id="editorList" class="list"></div>
+  <div class="row" style="margin-top:10px"><button id="addTask" class="primary">➕ Nova tarefa</button><button id="resetTasks" class="danger">Restaurar lista original</button></div>
+</section>
+
+<div class="footer">PWA: pode ser instalado no Chrome. Nesta versão os dados ficam salvos neste dispositivo/navegador.</div>
+</main>
+<div id="toast" class="toast">Salvo!</div>
+
+<script>
+const originalTasks={
+daily:[["Tratar todos de casa com respeito e educação",2],["Arrumar a própria cama",1],["Guardar roupas e objetos pessoais",1],["Manter o quarto organizado",1],["Passear com o cachorro",1],["Lavar toda a louça no período da manhã",1],["Organizar a mochila e separar o uniforme escolar",1],["Cumprir os horários combinados sem precisar ser lembrado",1]],
+weekly:[["Aspirar o quarto",1],["Lavar o banheiro e organizar o quarto",1],["Ajudar na limpeza da casa",1],["Ajudar com as roupas — separar, dobrar ou guardar",1]],
+monthly:[["Fazer uma tarefa maior de limpeza",5],["Organizar completamente armário/gavetas",5],["Ajudar a manter a conta de energia abaixo de R$ 320,00",5]],
+bonus:[["Fazer algo em casa por iniciativa própria",10],["Ajudar alguém da família espontaneamente",10],["Cumprir uma semana inteira sem precisar ser lembrado",10]],
+discount:[["Não realizar uma tarefa combinada",-5],["Fazer a tarefa de qualquer jeito após ser advertido",-3],["Dizer que fez uma tarefa quando não fez",-10]]
+};
+const titles={daily:"🟢 Tarefas diárias",weekly:"🔵 Tarefas semanais",monthly:"🔴 Tarefas mensais",bonus:"⭐ Bônus",discount:"⚠️ Descontos"};
+const KEY="pwa_pontos_v3";
+let saved=JSON.parse(localStorage.getItem(KEY)||"{}");
+let tasks=saved.tasks||structuredClone(originalTasks);
+let marks=saved.marks||{};
+let selected=new Date();selected.setHours(12,0,0,0);
+const $=id=>document.getElementById(id);
+const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const persist=()=>localStorage.setItem(KEY,JSON.stringify({tasks,marks}));
+function toast(m="Salvo!"){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),1100)}
+function build(){
+ const root=$("mainSections");root.innerHTML="";
+ Object.entries(tasks).forEach(([type,list])=>{
+  const sec=document.createElement("section");sec.className="section";
+  const possible=list.reduce((a,x)=>a+Math.max(0,Number(x[1])||0),0);
+  sec.innerHTML=`<div class="section-title"><h2>${titles[type]}</h2><small>${possible} pts possíveis</small></div><div class="grid"></div>`;
+  const grid=sec.querySelector(".grid");
+  list.forEach((task,i)=>{
+   const label=document.createElement("label");label.className="task";
+   const cb=document.createElement("input");cb.type="checkbox";cb.dataset.type=type;cb.dataset.i=i;
+   const text=document.createElement("span");text.className="task-text";text.textContent=task[0];
+   const pts=document.createElement("span");pts.className="points "+(task[1]>=0?"positive":"negative");pts.textContent=(task[1]>0?"+":"")+task[1];
+   label.append(cb,text,pts);grid.appendChild(label);
+   cb.onchange=()=>{const k=key(selected);marks[k]??={};marks[k][type]??={};marks[k][type][i]=cb.checked;persist();update();toast(cb.checked?"Tarefa marcada!":"Tarefa desmarcada!")};
+  });
+  root.appendChild(sec);
+ });
+ loadDay();
+}
+function loadDay(){
+ $("date").value=key(selected);const d=marks[key(selected)]||{};
+ document.querySelectorAll(".task").forEach(l=>{const c=l.querySelector("input");const v=!!(d[c.dataset.type]&&d[c.dataset.type][c.dataset.i]);c.checked=v;l.classList.toggle("done",v)});
+ update();
+}
+function calcTotal(){
+ let total=0;
+ for(const d of Object.values(marks))for(const [type,obj] of Object.entries(d||{}))for(const [i,v] of Object.entries(obj||{}))if(v&&tasks[type]&&tasks[type][+i])total+=Number(tasks[type][+i][1])||0;
+ return total;
+}
+function dayTotal(k){
+ let total=0;const d=marks[k]||{};
+ for(const [type,obj] of Object.entries(d))for(const [i,v] of Object.entries(obj||{}))if(v&&tasks[type]&&tasks[type][+i])total+=Number(tasks[type][+i][1])||0;
+ return total;
+}
+function update(){
+ const total=calcTotal();$("total").textContent=total.toLocaleString("pt-BR");$("progressText").textContent=total.toLocaleString("pt-BR")+" / 1.000";const pct=Math.max(0,Math.min(100,total/10));$("percent").textContent=Math.round(pct)+"%";$("fill").style.width=pct+"%";
+ [[600,"b600"],[700,"b700"],[800,"b800"],[900,"b900"]].forEach(([n,id])=>$(id).classList.toggle("active",total>=n));
+ document.querySelectorAll(".task").forEach(l=>l.classList.toggle("done",l.querySelector("input").checked));
+}
+function move(n){selected.setDate(selected.getDate()+n);loadDay()}
+$("prev").onclick=()=>move(-1);$("next").onclick=()=>move(1);
+$("today").onclick=()=>{selected=new Date();selected.setHours(12,0,0,0);loadDay()};
+$("date").onchange=()=>{const [y,m,d]=$("date").value.split("-").map(Number);if(y&&m&&d){selected=new Date(y,m-1,d,12);loadDay()}};
+function renderHistory(){
+ const entries=Object.keys(marks).map(k=>[k,dayTotal(k)]).filter(x=>x[1]!==0).sort((a,b)=>b[0].localeCompare(a[0]));
+ $("daysCount").textContent=entries.length;
+ $("bestDay").textContent=(entries.length?Math.max(...entries.map(x=>x[1])):0)+" pts";
+ $("avgDay").textContent=(entries.length?Math.round(entries.reduce((a,x)=>a+x[1],0)/entries.length):0)+" pts";
+ $("historyList").innerHTML=entries.length?entries.map(([k,v])=>`<button class="task" data-history="${k}" style="text-align:left"><span>📅 ${k.split("-").reverse().join("/")}</span><span class="points ${v>=0?"positive":"negative"}">${v>0?"+":""}${v} pts</span></button>`).join(""):"<div class='empty'>Ainda não há dias com pontos.</div>";
+ document.querySelectorAll("[data-history]").forEach(b=>b.onclick=()=>{const [d,m,y]=b.dataset.history.split("-").map(Number);selected=new Date(y,m-1,d,12);loadDay();$("historyPanel").classList.add("hidden")});
+}
+$("historyBtn").onclick=()=>{$("historyPanel").classList.remove("hidden");$("editPanel").classList.add("hidden");renderHistory()};
+$("closeHistory").onclick=()=>$("historyPanel").classList.add("hidden");
+function renderEditor(){
+ const el=$("editorList");el.innerHTML="";
+ Object.entries(tasks).forEach(([type,list])=>list.forEach((t,i)=>{
+  const row=document.createElement("div");row.className="task-editor";
+  row.innerHTML=`<input value="${t[0].replaceAll('"','&quot;')}" aria-label="Nome"><input type="number" value="${t[1]}" aria-label="Pontos"><select aria-label="Categoria">${Object.entries(titles).map(([k,v])=>`<option value="${k}" ${k===type?"selected":""}>${v.replace(/^[^ ]+ /,"")}</option>`).join("")}</select><button class="danger">🗑️</button>`;
+  const [name,pts,sel,del]=row.children;
+  name.onchange=()=>{tasks[type][i][0]=name.value.trim()||"Tarefa";persist();build();renderEditor();toast("Tarefa alterada!")};
+  pts.onchange=()=>{let n=Number(pts.value);if(!Number.isFinite(n))n=0;n=Math.max(-100,Math.min(100,Math.round(n)));tasks[type][i][1]=n;persist();build();renderEditor();toast("Pontos alterados!")};
+  sel.onchange=()=>{const nt=sel.value;const item=tasks[type].splice(i,1)[0];tasks[nt]??=[];tasks[nt].push(item);persist();build();renderEditor();toast("Categoria alterada!")};
+  del.onclick=()=>{if(confirm("Excluir esta tarefa da lista?")){tasks[type].splice(i,1);persist();build();renderEditor();toast("Tarefa excluída!")}};
+  el.appendChild(row);
+ }));
+}
+$("editBtn").onclick=()=>{$("editPanel").classList.remove("hidden");$("historyPanel").classList.add("hidden");renderEditor()};
+$("closeEdit").onclick=()=>$("editPanel").classList.add("hidden");
+$("addTask").onclick=()=>{tasks.daily.push(["Nova tarefa",1]);persist();renderEditor();build();$("editPanel").classList.remove("hidden");toast("Nova tarefa criada!")};
+$("resetTasks").onclick=()=>{if(confirm("Restaurar todas as tarefas originais? A lista personalizada será perdida.")){tasks=structuredClone(originalTasks);persist();build();renderEditor();toast("Lista restaurada!")}};
+build();
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body>
+</html>
