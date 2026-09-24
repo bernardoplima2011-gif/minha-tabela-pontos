@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d12">
+  <meta name="description" content="Minha Tabela de Pontos">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg">
+  <title>Minha Tabela de Pontos</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--bg:#080a0f;--card:#11141b;--card2:#171b24;--line:#252b37;--text:#f5f7fb;--muted:#9aa3b2;--accent:#7c5cff;--accent2:#9b86ff;--green:#31d48a;--red:#ff5d73;--yellow:#ffd166}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 20% 0,#17122b 0,#080a0f 35%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
+    button,input{font:inherit}button{border:0;cursor:pointer}.wrap{max-width:1050px;margin:auto;padding:18px}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.brand h1{font-size:24px;margin:0}.brand p{color:var(--muted);margin:5px 0 0;font-size:13px}
+    .pill{background:#191d27;border:1px solid var(--line);padding:9px 12px;border-radius:999px;color:var(--muted);font-size:12px}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.card{background:linear-gradient(145deg,rgba(24,28,38,.98),rgba(13,16,22,.98));border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 16px 45px #0005}
+    .big{font-size:48px;font-weight:800;line-height:1}.big span{font-size:20px;color:var(--muted);font-weight:600}.muted{color:var(--muted)}.progress{height:10px;background:#242934;border-radius:99px;overflow:hidden;margin:13px 0}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),#c0b4ff);border-radius:99px;transition:.35s}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.stat{background:#0d1016;border:1px solid var(--line);padding:12px;border-radius:16px}.stat b{display:block;font-size:20px}.stat small{color:var(--muted)}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{background:#202531;color:var(--text);padding:10px 13px;border-radius:12px;border:1px solid var(--line)}.btn.primary{background:var(--accent);border-color:var(--accent)}.btn.danger{background:#351720;color:#ff9bab}.btn:active{transform:scale(.98)}
+    .datebox{display:flex;align-items:center;gap:8px;margin:14px 0}.datebox input{background:#0c0f15;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px;flex:1;min-width:0}
+    h2{font-size:18px;margin:0 0 12px}.section{margin-top:14px}.task{display:flex;align-items:center;gap:11px;background:#0d1016;border:1px solid var(--line);padding:13px;border-radius:15px;margin:8px 0}.task input{width:21px;height:21px;accent-color:var(--accent)}.task .name{flex:1}.task.done .name{text-decoration:line-through;color:#77808e}.pts{font-weight:800;color:var(--green);white-space:nowrap}.edit{background:transparent;color:var(--muted);padding:5px}
+    .empty{text-align:center;color:var(--muted);padding:22px}.login{display:none}.login.show{display:block}.login input{width:100%;padding:12px;margin:6px 0;background:#0b0e14;border:1px solid var(--line);color:var(--text);border-radius:12px}.msg{font-size:13px;margin-top:8px;color:var(--muted)}
+    canvas{width:100%;height:260px;background:#0b0e14;border:1px solid var(--line);border-radius:16px}.chartWrap{position:relative}.chartLegend{display:flex;gap:15px;font-size:12px;color:var(--muted);margin:10px 0}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--accent)}.dot.green{background:var(--green)}
+    .modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.open{display:flex}.modal .box{width:min(440px,100%);background:#11141b;border:1px solid var(--line);border-radius:20px;padding:18px}.modal input{width:100%;padding:12px;background:#0b0e14;color:white;border:1px solid var(--line);border-radius:11px;margin:7px 0}
+    footer{text-align:center;color:#606979;font-size:12px;padding:25px 0}.hide{display:none!important}
+    @media(max-width:720px){.hero{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.big{font-size:42px}.wrap{padding:12px}.top{align-items:flex-start}}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Minha Tabela de Pontos</h1><p>Organize suas tarefas e chegue aos 1.000 pontos.</p></div>
+    <div id="accountPill" class="pill">Não conectado</div>
+  </header>
+
+  <section id="loginCard" class="card login">
+    <h2>☁️ Sincronizar entre dispositivos</h2>
+    <p class="muted">Entre na mesma conta em outro celular para carregar seus pontos.</p>
+    <input id="email" type="email" placeholder="Seu e-mail">
+    <input id="password" type="password" placeholder="Senha">
+    <div class="actions">
+      <button class="btn primary" id="loginBtn">Entrar</button>
+      <button class="btn" id="signupBtn">Criar conta</button>
+    </div>
+    <div id="authMsg" class="msg"></div>
+  </section>
+
+  <section class="hero">
+    <div class="card">
+      <div class="row"><div><div class="muted">Total acumulado</div><div class="big" id="total">0 <span>/ 1.000</span></div></div><div class="pill" id="percent">0%</div></div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+      <div class="stats">
+        <div class="stat"><b id="dayPoints">0</b><small>Pontos do dia</small></div>
+        <div class="stat"><b id="doneCount">0</b><small>Tarefas feitas</small></div>
+        <div class="stat"><b id="remaining">1.000</b><small>Faltam</small></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📅 Dia selecionado</h2>
+      <div class="datebox"><button class="btn" id="prevDay">‹</button><input id="date" type="date"><button class="btn" id="nextDay">›</button></div>
+      <div class="muted" id="dateLabel"></div>
+      <div class="actions" style="margin-top:12px"><button class="btn primary" id="todayBtn">Hoje</button><button class="btn" id="chartBtn">📈 Ver gráfico</button></div>
+    </div>
+  </section>
+
+  <section class="card section">
+    <div class="row"><h2>✅ Tarefas</h2><button class="btn primary" id="addBtn">+ Adicionar</button></div>
+    <div id="tasks"></div>
+  </section>
+
+  <section class="card section" id="chartSection">
+    <div class="row"><h2>📈 Evolução</h2><button class="btn" id="closeChart">Fechar</button></div>
+    <div class="chartLegend"><span><i class="dot"></i>Pontos do dia</span><span><i class="dot green"></i>Total acumulado</span></div>
+    <canvas id="chart" width="900" height="300"></canvas>
+  </section>
+
+  <section class="card section">
+    <div class="row"><h2>⚙️ Conta</h2><button class="btn danger" id="logoutBtn">Sair</button></div>
+    <p class="muted" id="accountText">Entre para sincronizar.</p>
+  </section>
+  <footer>Minha Tabela de Pontos • meta de 1.000 pontos</footer>
+</div>
+
+<div class="modal" id="taskModal">
+  <div class="box">
+    <h2 id="modalTitle">Adicionar tarefa</h2>
+    <input id="taskName" placeholder="Nome da tarefa">
+    <input id="taskPoints" type="number" min="0" step="1" placeholder="Pontos">
+    <div class="actions" style="margin-top:10px"><button class="btn primary" id="saveTask">Salvar</button><button class="btn" id="cancelTask">Cancelar</button></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://dcoyzmfelpqpfcayvssa.supabase.co";
+const SUPABASE_KEY="sb_publishable_N1Gf6dBokkgvgxWznUysXA_TT1IvQzU";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const DEFAULT_TASKS=[
+  {id:"arrumar",name:"Arrumar a cama",points:1},
+  {id:"quarto",name:"Arrumar o quarto",points:1},
+  {id:"louca",name:"Ajudar com a louça",points:1},
+  {id:"estudos",name:"Estudar / fazer tarefas",points:1},
+  {id:"higiene",name:"Manter a higiene pessoal",points:1},
+  {id:"organizar",name:"Organizar minhas coisas",points:1}
+];
+
+let state=JSON.parse(localStorage.getItem("pontos_state")||"null")||{tasks:DEFAULT_TASKS,marks:{}};
+let selectedDate=new Date().toISOString().slice(0,10), editId=null, user=null;
+
+function saveLocal(){localStorage.setItem("pontos_state",JSON.stringify(state))}
+function key(d,id){return d+"__"+id}
+function dayPoints(d){return state.tasks.reduce((s,t)=>s+(state.marks[key(d,t.id)]?Number(t.points):0),0)}
+function totalPoints(){let total=0;Object.keys(state.marks).forEach(k=>{if(state.marks[k]){let id=k.split("__").slice(1).join("__"),t=state.tasks.find(x=>x.id===id);if(t) total+=Number(t.points)}});return total}
+async function persist(){
+  saveLocal();
+  if(!user)return;
+  const {error}=await sb.from("pontos").upsert({user_id:user.id,dados:{tasks:state.tasks,marks:state.marks},atualizado_em:new Date().toISOString()});
+  if(error) console.warn("Sync:",error.message);
+}
+async function loadCloud(){
+  if(!user)return;
+  const {data,error}=await sb.from("pontos").select("dados").eq("user_id",user.id).maybeSingle();
+  if(error){console.warn(error);return}
+  if(data?.dados){state={tasks:Array.isArray(data.dados.tasks)&&data.dados.tasks.length?data.dados.tasks:DEFAULT_TASKS,marks:data.dados.marks||{}};saveLocal();render()}
+}
+function fmt(d){return new Date(d+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"})}
+function render(){
+  const total=totalPoints(),dp=dayPoints(selectedDate),done=state.tasks.filter(t=>state.marks[key(selectedDate,t.id)]).length;
+  document.getElementById("total").innerHTML=`${total.toLocaleString("pt-BR")} <span>/ 1.000</span>`;
+  document.getElementById("percent").textContent=Math.min(100,total/10).toFixed(0)+"%";
+  document.getElementById("bar").style.width=Math.min(100,total/10)+"%";
+  document.getElementById("dayPoints").textContent=dp;
+  document.getElementById("doneCount").textContent=done;
+  document.getElementById("remaining").textContent=Math.max(0,1000-total);
+  document.getElementById("date").value=selectedDate;
+  document.getElementById("dateLabel").textContent=fmt(selectedDate);
+  const box=document.getElementById("tasks");box.innerHTML="";
+  if(!state.tasks.length){box.innerHTML='<div class="empty">Nenhuma tarefa cadastrada.</div>'}
+  state.tasks.forEach(t=>{
+    const checked=!!state.marks[key(selectedDate,t.id)],div=document.createElement("div");
+    div.className="task"+(checked?" done":"");
+    div.innerHTML=`<input type="checkbox" ${checked?"checked":""}><div class="name">${escapeHtml(t.name)}</div><div class="pts">+${t.points}</div><button class="edit">✏️</button>`;
+    div.querySelector("input").onchange=async e=>{state.marks[key(selectedDate,t.id)]=e.target.checked;await persist();render()};
+    div.querySelector(".edit").onclick=()=>openModal(t);
+    box.appendChild(div);
+  });
+  document.getElementById("accountPill").textContent=user?user.email:"Não conectado";
+  document.getElementById("accountText").textContent=user?`Conectado como ${user.email}. Seus dados ficam sincronizados na nuvem.`:"Entre para sincronizar seus dados entre dispositivos.";
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function move(n){let d=new Date(selectedDate+"T12:00:00");d.setDate(d.getDate()+n);selectedDate=d.toISOString().slice(0,10);render()}
+document.getElementById("date").onchange=e=>{selectedDate=e.target.value;render()}
+document.getElementById("prevDay").onclick=()=>move(-1);document.getElementById("nextDay").onclick=()=>move(1);
+document.getElementById("todayBtn").onclick=()=>{selectedDate=new Date().toISOString().slice(0,10);render()};
+document.getElementById("chartBtn").onclick=()=>{document.getElementById("chartSection").scrollIntoView({behavior:"smooth"});drawChart()};
+document.getElementById("closeChart").onclick=()=>document.getElementById("chartSection").scrollIntoView({behavior:"smooth"});
+document.getElementById("addBtn").onclick=()=>openModal();
+function openModal(t=null){editId=t?.id||null;document.getElementById("modalTitle").textContent=t?"Editar tarefa":"Adicionar tarefa";document.getElementById("taskName").value=t?.name||"";document.getElementById("taskPoints").value=t?.points??1;document.getElementById("taskModal").classList.add("open")}
+document.getElementById("cancelTask").onclick=()=>document.getElementById("taskModal").classList.remove("open");
+document.getElementById("saveTask").onclick=async()=>{
+  const name=document.getElementById("taskName").value.trim(),points=Math.max(0,Number(document.getElementById("taskPoints").value)||0);
+  if(!name)return;
+  if(editId){let t=state.tasks.find(x=>x.id===editId);if(t){t.name=name;t.points=points}}
+  else state.tasks.push({id:"t"+Date.now(),name,points});
+  document.getElementById("taskModal").classList.remove("open");await persist();render();
+};
+document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut();user=null;document.getElementById("loginCard").classList.add("show");render()};
+document.getElementById("loginBtn").onclick=async()=>auth(false);
+document.getElementById("signupBtn").onclick=async()=>auth(true);
+async function auth(create){
+  const email=document.getElementById("email").value.trim(),password=document.getElementById("password").value, m=document.getElementById("authMsg");
+  if(!email||password.length<6){m.textContent="Digite um e-mail e uma senha com pelo menos 6 caracteres.";return}
+  m.textContent="Aguarde...";
+  const r=create?await sb.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}}):await sb.auth.signInWithPassword({email,password});
+  if(r.error){m.textContent=r.error.message;return}
+  if(create){m.textContent="Conta criada! Veja seu e-mail para confirmar. Depois volte e entre.";return}
+  user=r.data.user;document.getElementById("loginCard").classList.remove("show");await loadCloud();render();
+}
+function drawChart(){
+  const c=document.getElementById("chart"),ctx=c.getContext("2d"),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;
+  c.width=w*dpr;c.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  const days=[];for(let i=29;i>=0;i--){let d=new Date(selectedDate+"T12:00:00");d.setDate(d.getDate()-i);days.push(d.toISOString().slice(0,10))}
+  let cumulative=0;const daily=days.map(d=>dayPoints(d)),cum=daily.map(v=>cumulative+=v),max=Math.max(10,...cum),pad={l:38,r:14,t:20,b:32},cw=w-pad.l-pad.r,ch=h-pad.t-pad.b;
+  ctx.strokeStyle="#252b37";ctx.lineWidth=1;for(let i=0;i<=4;i++){let y=pad.t+ch-i*ch/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillStyle="#707887";ctx.font="11px system-ui";ctx.fillText(Math.round(max*i/4),5,y+4)}
+  function line(arr,color){ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();arr.forEach((v,i)=>{let x=pad.l+i*cw/(arr.length-1),y=pad.t+ch-(v/max)*ch;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}
+  line(daily,"#9b86ff");line(cum,"#31d48a");
+  ctx.fillStyle="#707887";ctx.font="10px system-ui";days.forEach((d,i)=>{if(i%5===0){let x=pad.l+i*cw/(days.length-1);ctx.fillText(d.slice(8)+"/"+d.slice(5,7),x-12,h-10)}});
+}
+window.addEventListener("resize",drawChart);
+sb.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;document.getElementById("loginCard").classList.toggle("show",!user);render();if(user)await loadCloud()});
+render();drawChart();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
