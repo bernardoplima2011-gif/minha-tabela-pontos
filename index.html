@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>Minha Tabela de Pontos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#070b15;--panel:#11192a;--card:#182238;--card2:#202c45;--text:#f8fafc;--muted:#9aa8bd;--green:#35d07f;--blue:#4da3ff;--yellow:#ffd34d;--red:#ff6675;--purple:#9b7cff;--border:#2b3955}
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(circle at 50% -10%,#243655 0,#0b1020 42%,#070b15 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh}
@@ -21,13 +22,38 @@ header{display:flex;justify-content:space-between;gap:12px;align-items:center;ma
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:14px;margin-bottom:12px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{min-height:44px}.row input,.row select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:11px;padding:8px 10px;min-width:0}.primary{background:#2b9d68!important;border-color:#48c483!important}.danger{background:#4b1f29!important;border-color:#793240!important}.mutedbtn{background:var(--card)!important}.hidden{display:none!important}.small{font-size:13px;color:var(--muted)}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:11px}.stat b{display:block;font-size:21px}.list{display:grid;gap:8px}.task-editor{display:grid;grid-template-columns:1fr 80px 90px auto;gap:7px;align-items:center}.task-editor input,.task-editor select{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px;min-height:42px}.footer{color:var(--muted);font-size:12px;text-align:center;padding:10px}.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:#eafaf1;color:#103521;padding:10px 15px;border-radius:12px;font-weight:800;opacity:0;pointer-events:none;transition:.2s;z-index:20}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:700px){header{align-items:stretch;flex-direction:column}.score{text-align:left}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.task-editor{grid-template-columns:1fr 75px 80px auto}.app{padding:11px 10px 28px}}
 @media(max-width:420px){.task-editor{grid-template-columns:1fr 1fr}.task-editor input:first-child{grid-column:1/-1}}
+
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 50% -10%,#243655 0,#0b1020 42%,#070b15 100%);color:var(--text)}
+.auth-card{width:min(440px,100%);background:var(--panel);border:1px solid var(--border);border-radius:24px;padding:24px;box-shadow:0 20px 60px #0008}
+.auth-card h1{margin:0 0 8px;font-size:26px}.auth-card p{color:var(--muted);line-height:1.45}
+.auth-card input{display:block;width:100%;margin:10px 0;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:13px}
+.auth-actions{display:flex;gap:8px;margin-top:12px}.auth-actions button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text)}
+.auth-actions .primary{background:#1d7d50}.auth-card small{display:block;margin-top:12px;color:var(--muted);line-height:1.4}
 </style>
 </head>
 <body>
-<main class="app">
+
+<section id="authPanel" class="auth-wrap">
+  <div class="auth-card">
+    <h1>☁️ Minha Tabela de Pontos</h1>
+    <p>Entre na sua conta para sincronizar seus pontos entre dispositivos.</p>
+    <input id="authEmail" type="email" placeholder="Seu e-mail" autocomplete="email">
+    <input id="authPassword" type="password" placeholder="Sua senha" autocomplete="current-password">
+    <div class="auth-actions">
+      <button id="signIn" class="primary">Entrar</button>
+      <button id="signUp">Criar conta</button>
+    </div>
+    <small id="authMsg"></small>
+  </div>
+</section>
+
+<main class="app" id="app" style="display:none">
 <header>
   <div class="brand"><h1>🏆 Minha Tabela de Pontos</h1><p>Pequenas atitudes, grandes conquistas!</p></div>
+  <div>
   <div class="score"><strong id="total">0</strong><span>pontos acumulados</span></div>
+  <button id="signOut" style="margin-top:6px;width:100%">Sair</button>
+</div>
 </header>
 
 <div class="toolbar">
@@ -60,7 +86,7 @@ header{display:flex;justify-content:space-between;gap:12px;align-items:center;ma
   <div class="row" style="margin-top:10px"><button id="addTask" class="primary">➕ Nova tarefa</button><button id="resetTasks" class="danger">Restaurar lista original</button></div>
 </section>
 
-<div class="footer">PWA: pode ser instalado no Chrome. Nesta versão os dados ficam salvos neste dispositivo/navegador.</div>
+<div class="footer">☁️ Sincronizado com a nuvem • PWA instalável no Chrome</div>
 </main>
 <div id="toast" class="toast">Salvo!</div>
 
@@ -73,15 +99,75 @@ bonus:[["Fazer algo em casa por iniciativa própria",10],["Ajudar alguém da fam
 discount:[["Não realizar uma tarefa combinada",-5],["Fazer a tarefa de qualquer jeito após ser advertido",-3],["Dizer que fez uma tarefa quando não fez",-10]]
 };
 const titles={daily:"🟢 Tarefas diárias",weekly:"🔵 Tarefas semanais",monthly:"🔴 Tarefas mensais",bonus:"⭐ Bônus",discount:"⚠️ Descontos"};
+const SUPABASE_URL="https://dcoyzmfelpqpfcayvssa.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_N1Gf6dBokkgvgxWznUysXA_TT1IvQzU";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const KEY="pwa_pontos_v3";
 let saved=JSON.parse(localStorage.getItem(KEY)||"{}");
 let tasks=saved.tasks||structuredClone(originalTasks);
 let marks=saved.marks||{};
 let selected=new Date();selected.setHours(12,0,0,0);
+let currentUser=null;
+let syncTimer=null;
 const $=id=>document.getElementById(id);
 const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-const persist=()=>localStorage.setItem(KEY,JSON.stringify({tasks,marks}));
-function toast(m="Salvo!"){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),1100)}
+function localPersist(){localStorage.setItem(KEY,JSON.stringify({tasks,marks}));}
+async function persist(){
+  localPersist();
+  if(!currentUser)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(async()=>{
+    const {error}=await supabaseClient.from("pontos").upsert({
+      user_id:currentUser.id,
+      dados:{tasks,marks},
+      atualizado_em:new Date().toISOString()
+    });
+    if(error){console.error(error);toast("Salvo no celular; erro ao sincronizar");}
+    else toast("☁️ Sincronizado!");
+  },250);
+}
+async function loadCloud(){
+  const {data,error}=await supabaseClient.from("pontos").select("dados").eq("user_id",currentUser.id).maybeSingle();
+  if(error){console.error(error);toast("Erro ao carregar a nuvem");return;}
+  if(data?.dados){
+    tasks=data.dados.tasks||structuredClone(originalTasks);
+    marks=data.dados.marks||{};
+    localPersist();
+  }else{
+    await persist();
+  }
+  build();
+}
+function toast(m="Salvo!"){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove("show"),1400)}
+function authMessage(m){$("authMsg").textContent=m||"";}
+async function startApp(session){
+  currentUser=session?.user||null;
+  if(!currentUser)return;
+  $("authPanel").style.display="none";
+  $("app").style.display="";
+  await loadCloud();
+}
+$("signIn").onclick=async()=>{
+  const email=$("authEmail").value.trim(),password=$("authPassword").value;
+  if(!email||!password){authMessage("Digite e-mail e senha.");return;}
+  authMessage("Entrando...");
+  const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(error){authMessage(error.message);return;}
+  authMessage("");
+  await startApp(data.session);
+};
+$("signUp").onclick=async()=>{
+  const email=$("authEmail").value.trim(),password=$("authPassword").value;
+  if(!email||!password){authMessage("Digite e-mail e senha.");return;}
+  if(password.length<6){authMessage("A senha precisa ter pelo menos 6 caracteres.");return;}
+  authMessage("Criando conta...");
+  const {data,error}=await supabaseClient.auth.signUp({email,password});
+  if(error){authMessage(error.message);return;}
+  if(data.session){authMessage("");await startApp(data.session);}
+  else authMessage("Conta criada! Confira seu e-mail para confirmar e depois entre.");
+};
+$("signOut").onclick=async()=>{await supabaseClient.auth.signOut();location.reload();};
+supabaseClient.auth.onAuthStateChange((_event,session)=>{if(session&&!currentUser)startApp(session);});
 function build(){
  const root=$("mainSections");root.innerHTML="";
  Object.entries(tasks).forEach(([type,list])=>{
@@ -152,8 +238,10 @@ $("editBtn").onclick=()=>{$("editPanel").classList.remove("hidden");$("historyPa
 $("closeEdit").onclick=()=>$("editPanel").classList.add("hidden");
 $("addTask").onclick=()=>{tasks.daily.push(["Nova tarefa",1]);persist();renderEditor();build();$("editPanel").classList.remove("hidden");toast("Nova tarefa criada!")};
 $("resetTasks").onclick=()=>{if(confirm("Restaurar todas as tarefas originais? A lista personalizada será perdida.")){tasks=structuredClone(originalTasks);persist();build();renderEditor();toast("Lista restaurada!")}};
-build();
-
+(async()=>{
+  const {data}=await supabaseClient.auth.getSession();
+  if(data.session) await startApp(data.session);
+})();
 if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script>
 </body>
